@@ -40,18 +40,15 @@ class Master(object):
     def add_proxy(self, proxy):
         self.proxies.append(proxy)
 
-    def start_proxy_server(self):
-        pass
 
     def add_layer(self, new_layer):
-        previous_layer = None
-
         if(len(self.layers)==0):
             previous_layer = self.proxies
         else:
             previous_layer = [self.layers[-1],]
 
         for i in previous_layer:
+            i.set_logger(self.loggers)
             i.set_lower_layer(new_layer)
 
         self.layers.append(new_layer)
@@ -72,7 +69,7 @@ class Master(object):
 
     def batch_work(self, func_name):
         res = []
-        for i in self.layers:
+        for i in self.proxies+self.layers:
             t = getattr(i, func_name)()
             res.append([t, str(type(i).__name__)])
         self.check_batch_process_results(res, func_name)
@@ -80,11 +77,25 @@ class Master(object):
     def pre_start(self):
         self.batch_work(sys._getframe(0).f_code.co_name)
 
+    def start(self):
+        if self.pre_start():
+            if self.batch_work(sys._getframe(0).f_code.co_name):
+                if self.post_start():
+                    return True
+        return False
+
+    def post_start(self):
+        self.batch_work(sys._getframe(0).f_code.co_name)
+
     def pre_stop(self):
         self.batch_work(sys._getframe(0).f_code.co_name)
 
     def stop(self):
-        self.batch_work(sys._getframe(0).f_code.co_name)
+        if self.pre_stop():
+            if self.batch_work(sys._getframe(0).f_code.co_name):
+                if self.post_stop():
+                    return True
+        return False
 
     def post_stop(self):
         self.batch_work(sys._getframe(0).f_code.co_name)

@@ -25,12 +25,7 @@ class BaseClass(object):
         self.master = None
         self.lower_layer = None
         self.upper_layer = None
-
-    def set_master(self, master):
-        self.master = master
-
-    def set_lower_layer(self, lower_layer):
-        self.lower_layer = lower_layer
+        self.logger = None
 
     def create_connection(self, address, kv=None):
         raise NotImplementException()
@@ -38,20 +33,36 @@ class BaseClass(object):
     def close_connection(self, id):
         raise NotImplementException()
 
-    def read(self, id, length):
+    def read(self, id):
         raise NotImplementException()
 
     def write(self, id, data):
         raise NotImplementException()
 
+    def set_master(self, master):
+        self.master = master
+
+    def set_lower_layer(self, lower_layer):
+        self.lower_layer = lower_layer
+
+    def set_logger(self, logger):
+        self.logger = logger
+
     def pre_start(self):
+        return True
+
+    def post_start(self):
+        return True
+
+    def start(self):
         return True
 
     def pre_stop(self):
         return True
 
+    def post_stop(self):
+        return True
+
     def stop(self):
         return True
 
-    def post_stop(self):
-        return True
