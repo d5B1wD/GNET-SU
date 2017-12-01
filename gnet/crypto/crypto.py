@@ -3,10 +3,11 @@
 
 from gnet.interface import BaseClass
 
+
 class Crypto(BaseClass):
 
-    def read(self, id):
-        return self.lower_layer.read(id)
+    def read(self, sid):
+        return self.lower_layer.read(sid)
 
     def write(self, id, data):
         return self.lower_layer.write(id, data)

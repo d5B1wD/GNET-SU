@@ -53,6 +53,8 @@ class BaseProxy(object):
 
     def new_connection(self, client_connection, address):
         target_info = self.get_target_address(client_connection)
+        if not target_info:
+            return
         target_address = target_info['address']
         self.logger.debug("accept new connection %s ===> %s" % (str(address), str(target_address)))
         sid = self.lower_layer.make_new_connection(target_address)

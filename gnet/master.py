@@ -3,6 +3,10 @@
 
 import sys
 
+
+TEST_CONNECTION_STR = 'HELLO THERE'
+MASTER_SID = 0
+
 class LoggerMaster(object):
     def __init__(self):
         self.loggers = []
@@ -34,12 +38,12 @@ class Master(object):
 
     def __init__(self):
         self.layers = []
-        self.loggers = LoggerMaster()
+        self.logger = LoggerMaster()
         self.proxies = []
+        self.is_client = True
 
     def add_proxy(self, proxy):
         self.proxies.append(proxy)
-
 
     def add_layer(self, new_layer):
         if(len(self.layers)==0):
@@ -48,34 +52,59 @@ class Master(object):
             previous_layer = [self.layers[-1],]
 
         for i in previous_layer:
-            i.set_logger(self.loggers)
+            i.set_logger(self.logger)
             i.set_lower_layer(new_layer)
 
         self.layers.append(new_layer)
 
     def add_logger(self, logger):
-        self.loggers.add_logger(logger)
+        self.logger.add_logger(logger)
 
     def check_batch_process_results(self, results, caller_name=''):
+        success = True
         if not caller_name:
             caller_name = sys._getframe(2).f_code.co_name
         for i in results:
-            if i[0]==False:
-                self.loggers.warning("batch work '%s' result: %s %s",
-                                        caller_name, i[1], str(i[0]))
+            if not i[0]:
+                self.logger.warning("batch work '%s' result: %s %s",
+                                    caller_name, i[1], str(i[0]))
+                success = False
             else:
-                self.loggers.debug("batch work '%s' result: %s %s",
-                                        caller_name, i[1], str(i[0]))
+                self.logger.debug("batch work '%s' result: %s %s",
+                                  caller_name, i[1], str(i[0]))
+        return success
+
+    def test_connection(self):
+
+        if len(self.layers)==0 :
+            self.logger.Error("no layer exists!")
+            return False
+
+        upper_layer = self.layers[0]
+
+        upper_layer.write(MASTER_SID, TEST_CONNECTION_STR)
+        data = upper_layer.read(MASTER_SID)
+        if data == TEST_CONNECTION_STR:
+            self.logger.debug("receive hello echo from peer, ready from connection")
+            return True
+        else:
+            self.logger.Error("receive wrong hello echo from peer, except:%s got:%s"%
+                              (TEST_CONNECTION_STR, data))
+            return False
 
     def batch_work(self, func_name):
         res = []
         for i in self.proxies+self.layers:
             t = getattr(i, func_name)()
             res.append([t, str(type(i).__name__)])
-        self.check_batch_process_results(res, func_name)
+        return self.check_batch_process_results(res, func_name)
 
     def pre_start(self):
-        self.batch_work(sys._getframe(0).f_code.co_name)
+        res = self.batch_work(sys._getframe(0).f_code.co_name)
+        if res and self.is_client:
+            return self.test_connection()
+        else:
+            return res
 
     def start(self):
         if self.pre_start():

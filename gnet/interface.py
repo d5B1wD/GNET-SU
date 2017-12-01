@@ -9,6 +9,8 @@ for now, there's only `set_master` method.
 
 import sys
 
+DATA = {}
+
 class NotImplementException(Exception):
     def __init__(self):
         super(NotImplementException, self).__init__()
@@ -33,10 +35,10 @@ class BaseClass(object):
     def close_connection(self, id):
         raise NotImplementException()
 
-    def read(self, id):
+    def read(self, sid):
         raise NotImplementException()
 
-    def write(self, id, data):
+    def write(self, sid, data):
         raise NotImplementException()
 
     def set_master(self, master):
